@@ -156,22 +156,34 @@ export const friendshipRequestRouter = router({
       })
     }),
 
-  // decline: procedure
-  //   .use(canAnswerFriendshipRequest)
-  //   .input(AnswerFriendshipRequestInputSchema)
-  //   .mutation(async ({ ctx, input }) => {
-  //     /**
-  //      * Question 2: Implement api to decline a friendship request
-  //      *
-  //      * Set the friendship request status to `declined`
-  //      *
-  //      * Instructions:
-  //      *  - Go to src/server/tests/friendship-request.test.ts, enable the test
-  //      * scenario for Question 2
-  //      *  - Run `yarn test` to verify your answer
-  //      *
-  //      * Documentation references:
-  //      *  - https://vitest.dev/api/#test-skip
-  //      */
-  //   }),
+  decline: procedure
+    .use(canAnswerFriendshipRequest)
+    .input(AnswerFriendshipRequestInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.db
+          .updateTable('friendships')
+          .set({ status: FriendshipStatusSchema.Values['declined'] })
+          .where('userId', '=', input.friendUserId)
+          .where('friendUserId', '=', ctx.session.userId)
+          .execute()
+      } catch (error) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+        })
+      }
+      //     /**
+      //      * Question 2: Implement api to decline a friendship request
+      //      *
+      //      * Set the friendship request status to `declined`
+      //      *
+      //      * Instructions:
+      //      *  - Go to src/server/tests/friendship-request.test.ts, enable the test
+      //      * scenario for Question 2
+      //      *  - Run `yarn test` to verify your answer
+      //      *
+      //      * Documentation references:
+      //      *  - https://vitest.dev/api/#test-skip
+      //      */
+    }),
 })
