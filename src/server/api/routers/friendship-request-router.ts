@@ -65,6 +65,31 @@ export const friendshipRequestRouter = router({
     .use(canSendFriendshipRequest)
     .input(SendFriendshipRequestInputSchema)
     .mutation(async ({ ctx, input }) => {
+      const existingRequest = await ctx.db
+        .selectFrom('friendships')
+        .where('userId', '=', ctx.session.userId)
+        .where('friendUserId', '=', input.friendUserId)
+        .where('status', '=', FriendshipStatusSchema.Values['declined'])
+        .select('id')
+        .executeTakeFirst()
+
+      if (existingRequest) {
+        await ctx.db
+          .updateTable('friendships')
+          .set({ status: FriendshipStatusSchema.Values['requested'] })
+          .where('userId', '=', ctx.session.userId)
+          .where('friendUserId', '=', input.friendUserId)
+          .execute()
+      } else {
+        await ctx.db
+          .insertInto('friendships')
+          .values({
+            userId: ctx.session.userId,
+            friendUserId: input.friendUserId,
+            status: FriendshipStatusSchema.Values['requested'],
+          })
+          .execute()
+      }
       /**
        * Question 3: Fix bug
        *
@@ -79,14 +104,14 @@ export const friendshipRequestRouter = router({
        * scenario for Question 3
        *  - Run `yarn test` to verify your answer
        */
-      return ctx.db
-        .insertInto('friendships')
-        .values({
-          userId: ctx.session.userId,
-          friendUserId: input.friendUserId,
-          status: FriendshipStatusSchema.Values['requested'],
-        })
-        .execute()
+      // return ctx.db
+      //   .insertInto('friendships')
+      //   .values({
+      //     userId: ctx.session.userId,
+      //     friendUserId: input.friendUserId,
+      //     status: FriendshipStatusSchema.Values['requested'],
+      //   })
+      //   .execute()
     }),
 
   accept: procedure
